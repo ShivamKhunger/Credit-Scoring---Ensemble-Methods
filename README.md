@@ -15,10 +15,10 @@ This project leverages feature engineering, label encoding, scaling, and ensembl
 
 ---
 ## 📦 Repository Structure
-├── app.py # Streamlit application
-├── code.ipynb # Contains the training, preprocessing and visualization code & results
-├── credit_classifier.pkl # Trained ensemble classifier
-├── scaler.pkl # StandardScaler for numerical features
-├── features.pkl # List of model input features
-├── label_encoders.pkl # Saved label encoders for categorical variables
-├── README.md # This file
+├── app.py # Streamlit application  
+├── code.ipynb # Contains the training, preprocessing and visualization code & results  
+├── credit_classifier.pkl # Trained ensemble classifier  
+├── scaler.pkl # StandardScaler for numerical features  
+├── features.pkl # List of model input features  
+├── label_encoders.pkl # Saved label encoders for categorical variables  
+├── README.md # This file  
