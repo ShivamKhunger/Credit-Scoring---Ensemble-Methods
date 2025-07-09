@@ -135,9 +135,39 @@ else:
         try:
             input_df = pd.read_csv(uploaded_file)
 
+            for col in input_df.columns:
+                if col in reverse_maps:
+                    input_df[col] = input_df[col].map(reverse_maps[col]).fillna(input_df[col])
+
+            invalid_rows = pd.DataFrame()
+            global_valid_mask = pd.Series(True, index=input_df.index)
+
             for col in input_df.select_dtypes(include='object').columns:
                 if col in label_encoders:
-                    input_df[col] = label_encoders[col].transform(input_df[col])
+                    valid_labels = set(label_encoders[col].classes_)
+                    mask_valid = input_df[col].isin(valid_labels)
+
+                    if not mask_valid.all():
+                        n_invalid = (~mask_valid).sum()
+                        st.warning(f"⚠️ Skipped {n_invalid} row(s) with invalid/unseen values in '{col}' column.")
+                        invalid_rows = pd.concat([invalid_rows, input_df[~mask_valid]])
+
+                        global_valid_mask &= mask_valid  
+                else:
+                    st.error(f"❌ Column '{col}' contains strings but no saved LabelEncoder.")
+                    st.stop()
+
+            input_df = input_df[global_valid_mask].reset_index(drop=True)
+
+            for col in input_df.select_dtypes(include='object').columns:
+                input_df[col] = label_encoders[col].transform(input_df[col])
+
+            if not invalid_rows.empty:
+                st.info("You can download skipped rows for correction:")
+                csv = invalid_rows.drop_duplicates().to_csv(index=False).encode("utf-8")
+                st.download_button("⬇️ Download skipped rows", data=csv, file_name="skipped_rows.csv", mime="text/csv")
+
+
 
             missing_cols = set(feature_columns) - set(input_df.columns)
             if missing_cols:
@@ -149,7 +179,7 @@ else:
                 probabilities = model.predict_proba(scaled_data)[:, 1]
 
                 result_df = input_df.copy()
-                result_df["Predicted Risk"] = ["Good (0)" if p == 1 else "Bad (1)" for p in predictions]
+                result_df["Predicted Risk"] = ["Good" if p == 1 else "Bad" for p in predictions]
                 result_df["Probability (Good)"] = probabilities.round(3)
 
                 st.success("Predictions completed!")
